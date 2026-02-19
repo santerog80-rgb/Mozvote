@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Votar — MOZVOTE SUPREMO</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Source+Sans+3:wght@400;600&family=Courier+Prime:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root { --verde:#009A44; --vermelho:#C8102E; --amarelo:#FFD700; --preto:#0a0a0a; --branco:#f5f5f5; --dourado:#B8860B; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Source Sans 3',sans-serif; background:#0d0d0d; color:var(--branco); min-height:100vh; }
+  .flag-stripe { height:6px; background:linear-gradient(90deg,var(--verde) 33%,#111 33%,#111 34%,var(--amarelo) 34%,var(--amarelo) 66%,#111 66%,#111 67%,var(--vermelho) 67%); }
+
+  /* URNA container */
+  .urna-wrapper {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* Urna header */
+  .urna-header {
+    background: linear-gradient(135deg, #1a0a0a, #0a1a0a, #1a1a00);
+    border: 2px solid var(--amarelo);
+    border-radius: 12px 12px 0 0;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .urna-logo { display:flex; align-items:center; gap:12px; }
+  .urna-logo-icon { 
+    width:50px; height:50px;
+    background: radial-gradient(circle, var(--amarelo), var(--dourado));
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem;
+  }
+  .urna-title { font-family:'Oswald',sans-serif; font-size:1.1rem; letter-spacing:2px; text-transform:uppercase; }
+  .urna-subtitle { font-size:0.75rem; color:rgba(255,255,255,0.5); letter-spacing:1px; }
+  .urna-user { text-align:right; font-size:0.85rem; }
+  .urna-user strong { color:var(--amarelo); display:block; font-family:'Oswald',sans-serif; letter-spacing:1px; }
+
+  /* Screen display */
+  .urna-screen {
+    background: #050f05;
+    border-left: 2px solid var(--amarelo);
+    border-right: 2px solid var(--amarelo);
+    padding: 25px 20px;
+    border-bottom: 1px solid rgba(255,215,0,0.3);
+  }
+  .screen-label {
+    font-family:'Courier Prime',monospace;
+    font-size:0.75rem;
+    color:rgba(0,255,0,0.5);
+    letter-spacing:2px;
+    text-transform:uppercase;
+    margin-bottom:15px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .screen-label::before { content:'▶'; color:var(--verde); }
+  .eleicao-titulo {
+    font-family:'Oswald',sans-serif;
+    font-size:1.4rem;
+    text-align:center;
+    color:var(--amarelo);
+    letter-spacing:3px;
+    text-transform:uppercase;
+    margin-bottom:5px;
+  }
+  .eleicao-instrucao {
+    text-align:center;
+    font-size:0.9rem;
+    color:rgba(255,255,255,0.5);
+    margin-bottom:0;
+  }
+
+  /* Partidos grid */
+  .partidos-section {
+    background: #0a0a0a;
+    border-left: 2px solid var(--amarelo);
+    border-right: 2px solid var(--amarelo);
+    padding: 25px 20px;
+  }
+  .partidos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+  }
+  .partido-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+    overflow: hidden;
+  }
+  .partido-card:hover {
+    border-color: var(--amarelo);
+    background: rgba(255,215,0,0.05);
+    transform: translateY(-2px);
+  }
+  .partido-card.selected {
+    border-color: var(--verde);
+    background: rgba(0,154,68,0.15);
+    box-shadow: 0 0 20px rgba(0,154,68,0.3);
+  }
+  .partido-card.selected::before {
+    content: '✓';
+    position: absolute;
+    top: 10px; right: 12px;
+    width: 24px; height: 24px;
+    background: var(--verde);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: white;
+  }
+  .partido-numero {
+    font-family:'Courier Prime',monospace;
+    font-size:2.5rem;
+    font-weight:700;
+    color:var(--amarelo);
+    min-width:60px;
+    text-align:center;
+    line-height:1;
+    text-shadow:0 0 10px rgba(255,215,0,0.3);
+  }
+  .partido-info { flex:1; }
+  .partido-logo {
+    width:50px; height:50px;
+    border-radius:8px;
+    object-fit:contain;
+    background:rgba(255,255,255,0.1);
+    padding:4px;
+  }
+  .partido-logo-placeholder {
+    width:50px; height:50px;
+    border-radius:8px;
+    background:var(--partido-color, #333);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Oswald',sans-serif;
+    font-size:0.75rem;
+    font-weight:700;
+    color:white;
+    letter-spacing:1px;
+    text-align:center;
+  }
+  .partido-nome {
+    font-family:'Oswald',sans-serif;
+    font-size:1.2rem;
+    font-weight:700;
+    letter-spacing:2px;
+    color:var(--branco);
+  }
+  .partido-candidato {
+    font-size:0.85rem;
+    color:rgba(255,255,255,0.5);
+    margin-top:3px;
+  }
+  .partido-candidato strong { color:rgba(255,255,255,0.8); }
+
+  /* Urna keyboard section */
+  .urna-teclado {
+    background: linear-gradient(135deg, #1a1a00, #0a0a0a);
+    border: 2px solid var(--amarelo);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    padding: 25px 20px;
+  }
+  .teclado-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .btn-confirmar {
+    padding:18px;
+    background:linear-gradient(135deg, var(--verde), #006b2e);
+    color:white; border:none; border-radius:8px;
+    font-family:'Oswald',sans-serif; font-size:1rem;
+    font-weight:700; letter-spacing:3px; text-transform:uppercase;
+    cursor:pointer; transition:all 0.3s;
+    box-shadow:0 4px 15px rgba(0,154,68,0.3);
+  }
+  .btn-confirmar:hover:not(:disabled) { filter:brightness(1.15); transform:translateY(-2px); }
+  .btn-confirmar:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+  .btn-branco {
+    padding:18px;
+    background:transparent;
+    color:rgba(255,255,255,0.5); border:2px solid rgba(255,255,255,0.2); border-radius:8px;
+    font-family:'Oswald',sans-serif; font-size:1rem;
+    letter-spacing:3px; text-transform:uppercase;
+    cursor:pointer; transition:all 0.3s;
+  }
+  .btn-branco:hover { border-color:rgba(255,255,255,0.4); color:rgba(255,255,255,0.8); }
+  .selected-preview {
+    text-align:center;
+    padding:15px;
+    background:rgba(0,154,68,0.1);
+    border:1px solid rgba(0,154,68,0.3);
+    border-radius:8px;
+    margin-bottom:20px;
+    display:none;
+  }
+  .selected-preview.visible { display:block; }
+  .selected-preview .preview-num { font-family:'Courier Prime',monospace; font-size:3rem; font-weight:700; color:var(--amarelo); }
+  .selected-preview .preview-nome { font-family:'Oswald',sans-serif; font-size:1.1rem; letter-spacing:2px; color:var(--branco); }
+  .loader {
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.85);
+    z-index:9999;
+    align-items:center; justify-content:center;
+    flex-direction:column; gap:20px;
+  }
+  .loader.active { display:flex; }
+  .loader-ring {
+    width:60px; height:60px;
+    border:4px solid rgba(255,255,255,0.1);
+    border-top-color:var(--amarelo);
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loader p { font-family:'Oswald',sans-serif; letter-spacing:2px; font-size:0.95rem; color:rgba(255,255,255,0.7); }
+  @media(max-width:480px) {
+    .partidos-grid { grid-template-columns:1fr; }
+    .teclado-btns { grid-template-columns:1fr; }
+  }
+  @keyframes slideIn { from{transform:translateX(100px);opacity:0} to{transform:translateX(0);opacity:1} }
+</style>
+</head>
+<body>
+<div class="flag-stripe"></div>
+
+<div class="loader" id="loader">
+  <div class="loader-ring"></div>
+  <p>A PROCESSAR...</p>
+</div>
+
+<div class="urna-wrapper">
+  <div class="urna-header">
+    <div class="urna-logo">
+      <div class="urna-logo-icon">🗳️</div>
+      <div>
+        <div class="urna-title">MOZVOTE SUPREMO</div>
+        <div class="urna-subtitle">SISTEMA ELETRÓNICO DE VOTAÇÃO 🇲🇿</div>
+      </div>
+    </div>
+    <div class="urna-user">
+      <strong id="userName">A carregar...</strong>
+      <span>Eleitor Registado</span>
+    </div>
+  </div>
+
+  <div class="urna-screen">
+    <div class="screen-label">VOTAÇÃO EM PROGRESSO</div>
+    <div class="eleicao-titulo" id="eleicaoTitulo">ELEIÇÕES GERAIS 2025</div>
+    <div class="eleicao-instrucao">Escolha o número do seu partido e prima CONFIRMAR</div>
+  </div>
+
+  <div class="partidos-section">
+    <div class="partidos-grid" id="partidosGrid">
+      <!-- Loaded dynamically -->
+      <div style="text-align:center; padding:30px; color:rgba(255,255,255,0.3); grid-column:1/-1;">
+        <div class="loader-ring" style="margin:0 auto 15px;"></div>
+        <p>A carregar partidos...</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="urna-teclado">
+    <div class="selected-preview" id="selectedPreview">
+      <div class="preview-num" id="previewNum">—</div>
+      <div class="preview-nome" id="previewNome">Selecione um partido acima</div>
+      <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:5px;">O seu voto está prestes a ser confirmado</div>
+    </div>
+    <div class="teclado-btns">
+      <button class="btn-branco" onclick="clearSelection()">LIMPAR</button>
+      <button class="btn-confirmar" id="btnConfirmar" disabled onclick="irConfirmar()">CONFIRMAR →</button>
+    </div>
+    <div style="text-align:center; margin-top:15px;">
+      <a href="index.html" onclick="return confirm('Tem certeza que quer sair? O seu voto não será registado.')" style="color:rgba(255,255,255,0.25); font-size:0.8rem; text-decoration:none; letter-spacing:1px;">CANCELAR E SAIR</a>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script>
+let partidoSelecionado = null;
+let partidos = [];
+
+// Check session
+const user = checkSession();
+if (user) {
+  document.getElementById('userName').textContent = user.nome.split(' ')[0].toUpperCase();
+  if (user.votou) {
+    alert('Já votou! A redirecionar para resultados...');
+    window.location.href = 'resultado.html';
+  }
+}
+
+async function loadPartidos() {
+  try {
+    const config = await sbGet('configuracoes', '?id=eq.1');
+    if (config && config[0]) {
+      document.getElementById('eleicaoTitulo').textContent = config[0].titulo_eleicao.toUpperCase();
+      if (!config[0].eleicao_ativa) {
+        document.getElementById('partidosGrid').innerHTML = '<div style="text-align:center;padding:40px;color:var(--amarelo);grid-column:1/-1;font-family:Oswald,sans-serif;letter-spacing:2px;">⏸️ ELEIÇÃO SUSPENSA<br><small style="color:rgba(255,255,255,0.4);font-size:0.8rem;font-family:sans-serif;letter-spacing:normal;">Aguarde a reativação pelo administrador</small></div>';
+        return;
+      }
+    }
+    partidos = await sbGet('partidos', '?ativo=eq.true&order=numero.asc');
+    renderPartidos();
+  } catch(e) {
+    document.getElementById('partidosGrid').innerHTML = `<div style="text-align:center;padding:30px;color:#ff6b6b;grid-column:1/-1;">⚠️ Erro ao carregar partidos.<br><small>${e.message}</small></div>`;
+  }
+}
+
+const PARTIDO_CORES = { 'FRELIMO':'#CC0000', 'RENAMO':'#FFD700', 'MDM':'#0000CC', 'PODEMOS':'#FF6600' };
+
+function renderPartidos() {
+  const grid = document.getElementById('partidosGrid');
+  if (!partidos.length) {
+    grid.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,0.3);grid-column:1/-1;">Nenhum partido disponível</div>';
+    return;
+  }
+  grid.innerHTML = partidos.map(p => {
+    const cor = PARTIDO_CORES[p.nome] || p.cor || '#333';
+    const logoHtml = p.logo_url 
+      ? `<img src="${p.logo_url}" class="partido-logo" alt="${p.nome}" onerror="this.outerHTML='<div class=&quot;partido-logo-placeholder&quot; style=&quot;--partido-color:${cor}&quot;>${p.nome.substring(0,3)}</div>'">`
+      : `<div class="partido-logo-placeholder" style="--partido-color:${cor}">${p.nome.substring(0,4)}</div>`;
+    return `
+      <div class="partido-card" onclick="selectPartido('${p.id}', ${p.numero}, '${p.nome}', '${p.candidato}')" id="card-${p.id}">
+        <div class="partido-numero">${String(p.numero).padStart(2,'0')}</div>
+        ${logoHtml}
+        <div class="partido-info">
+          <div class="partido-nome">${p.nome}</div>
+          <div class="partido-candidato">Candidato: <strong>${p.candidato}</strong></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectPartido(id, numero, nome, candidato) {
+  // Clear previous selection
+  document.querySelectorAll('.partido-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('card-'+id).classList.add('selected');
+  
+  partidoSelecionado = { id, numero, nome, candidato };
+  document.getElementById('previewNum').textContent = String(numero).padStart(2,'0');
+  document.getElementById('previewNome').textContent = nome + ' — ' + candidato;
+  document.getElementById('selectedPreview').classList.add('visible');
+  document.getElementById('btnConfirmar').disabled = false;
+
+  // Play click sound
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    osc.start(); osc.stop(ctx.currentTime + 0.2);
+  } catch(e) {}
+}
+
+function clearSelection() {
+  partidoSelecionado = null;
+  document.querySelectorAll('.partido-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('selectedPreview').classList.remove('visible');
+  document.getElementById('btnConfirmar').disabled = true;
+}
+
+function irConfirmar() {
+  if (!partidoSelecionado) return;
+  sessionStorage.setItem('voto_partido', JSON.stringify(partidoSelecionado));
+  window.location.href = 'confirmar.html';
+}
+
+loadPartidos();
+</script>
+</body>
+</html>

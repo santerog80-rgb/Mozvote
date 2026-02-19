@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultados — MOZVOTE SUPREMO</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root { --verde:#009A44; --vermelho:#C8102E; --amarelo:#FFD700; --preto:#0a0a0a; --branco:#f5f5f5; --dourado:#B8860B; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Source Sans 3',sans-serif; background:#080808; color:var(--branco); min-height:100vh; }
+  .flag-stripe { height:6px; background:linear-gradient(90deg,var(--verde) 33%,#111 33%,#111 34%,var(--amarelo) 34%,var(--amarelo) 66%,#111 66%,#111 67%,var(--vermelho) 67%); }
+  header {
+    background:linear-gradient(135deg,#0d1a0d,#1a1a00);
+    border-bottom:2px solid var(--amarelo);
+    padding:25px 20px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:15px;
+  }
+  .header-left { display:flex; align-items:center; gap:12px; }
+  .header-logo { font-size:2rem; }
+  .header-title { font-family:'Oswald',sans-serif; font-size:1.3rem; letter-spacing:3px; text-transform:uppercase; color:var(--amarelo); }
+  .header-sub { font-size:0.8rem; color:rgba(255,255,255,0.4); letter-spacing:1px; }
+  .header-nav { display:flex; gap:10px; flex-wrap:wrap; }
+  .nav-btn {
+    padding:8px 18px;
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+    border-radius:6px; color:rgba(255,255,255,0.6);
+    text-decoration:none; font-size:0.8rem; letter-spacing:1px;
+    transition:all 0.2s;
+  }
+  .nav-btn:hover { border-color:var(--amarelo); color:var(--amarelo); }
+  main { max-width:1000px; margin:0 auto; padding:30px 20px; }
+  .live-badge {
+    display:inline-flex; align-items:center; gap:8px;
+    background:rgba(200,16,46,0.15); border:1px solid rgba(200,16,46,0.4);
+    border-radius:20px; padding:6px 16px;
+    font-size:0.8rem; letter-spacing:2px; color:#ff6b6b;
+    margin-bottom:25px;
+  }
+  .live-dot { width:8px;height:8px;border-radius:50%;background:var(--vermelho);animation:blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.2} }
+  .stats-row {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:15px; margin-bottom:30px;
+  }
+  .stat-card {
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+    border-radius:10px; padding:20px; text-align:center;
+  }
+  .stat-card .num {
+    font-family:'Oswald',sans-serif; font-size:2.5rem; font-weight:700;
+    color:var(--amarelo); line-height:1;
+  }
+  .stat-card .label { font-size:0.8rem; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:2px; margin-top:5px; }
+  .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:25px; margin-bottom:30px; }
+  @media(max-width:640px) { .charts-grid { grid-template-columns:1fr; } }
+  .chart-box {
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px; padding:25px;
+  }
+  .chart-box h3 { font-family:'Oswald',sans-serif; font-size:1rem; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.6); margin-bottom:20px; }
+  .chart-box.full-width { grid-column:1/-1; }
+  .resultados-list { margin-bottom:30px; }
+  .resultado-item {
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+    border-radius:10px; padding:20px; margin-bottom:12px;
+    transition:all 0.3s; position:relative; overflow:hidden;
+  }
+  .resultado-item.vencedor {
+    border-color:rgba(255,215,0,0.4);
+    background:rgba(255,215,0,0.05);
+    box-shadow:0 0 20px rgba(255,215,0,0.1);
+  }
+  .resultado-item.vencedor::before {
+    content:'🏆 VENCEDOR';
+    position:absolute; top:10px; right:15px;
+    font-family:'Oswald',sans-serif; font-size:0.7rem;
+    color:var(--amarelo); letter-spacing:2px;
+  }
+  .resultado-info { display:flex; align-items:center; gap:15px; margin-bottom:12px; }
+  .resultado-num { font-family:'Oswald',sans-serif; font-size:2rem; font-weight:700; color:rgba(255,255,255,0.2); min-width:50px; }
+  .resultado-nome { font-family:'Oswald',sans-serif; font-size:1.2rem; font-weight:700; letter-spacing:2px; }
+  .resultado-candidato { font-size:0.85rem; color:rgba(255,255,255,0.4); }
+  .resultado-votos { margin-left:auto; text-align:right; }
+  .resultado-votos .count { font-family:'Oswald',sans-serif; font-size:1.5rem; font-weight:700; }
+  .resultado-votos .pct { font-size:0.85rem; color:rgba(255,255,255,0.4); }
+  .progress-bar { height:8px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; border-radius:4px; transition:width 1.5s ease; }
+  .btn-reload {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:10px 20px;
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+    border-radius:8px; color:rgba(255,255,255,0.6);
+    font-family:'Oswald',sans-serif; font-size:0.85rem; letter-spacing:2px; text-transform:uppercase;
+    cursor:pointer; transition:all 0.2s; text-decoration:none; margin-top:15px;
+  }
+  .btn-reload:hover { border-color:var(--verde); color:var(--verde); }
+  @keyframes slideIn { from{transform:translateX(100px);opacity:0} to{transform:translateX(0);opacity:1} }
+</style>
+</head>
+<body>
+<div class="flag-stripe"></div>
+<header>
+  <div class="header-left">
+    <div class="header-logo">📊</div>
+    <div>
+      <div class="header-title">Resultados</div>
+      <div class="header-sub">MOZVOTE SUPREMO 🇲🇿</div>
+    </div>
+  </div>
+  <div class="header-nav">
+    <a href="index.html" class="nav-btn">⬅ Início</a>
+    <a href="votar.html" class="nav-btn">🗳️ Votar</a>
+  </div>
+</header>
+
+<main>
+  <div class="live-badge">
+    <span class="live-dot"></span>
+    RESULTADOS EM TEMPO REAL — <span id="lastUpdate">A carregar...</span>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num" id="totalVotos">—</div>
+      <div class="label">Total de Votos</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="totalEleitores">—</div>
+      <div class="label">Eleitores Registados</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="participacao">—</div>
+      <div class="label">Participação</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="numPartidos">—</div>
+      <div class="label">Partidos</div>
+    </div>
+  </div>
+
+  <div class="resultados-list" id="resultadosList">
+    <div style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);">A carregar resultados...</div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-box">
+      <h3>📊 Distribuição de Votos</h3>
+      <canvas id="chartPie" height="250"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>📈 Votos por Partido</h3>
+      <canvas id="chartBar" height="250"></canvas>
+    </div>
+  </div>
+
+  <div style="text-align:center;">
+    <button class="btn-reload" onclick="loadResultados()">🔄 ACTUALIZAR RESULTADOS</button>
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script>
+let pieChart, barChart;
+const CORES = ['#CC0000','#FFD700','#0055CC','#FF6600','#009A44','#9900CC','#00AAAA'];
+
+async function loadResultados() {
+  const { url, key } = getSBConfig();
+  if (!url || !key) {
+    document.getElementById('resultadosList').innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,215,0,0.6);">⚙️ Supabase não configurado. Configure no painel admin.</div>';
+    return;
+  }
+  try {
+    const [partidos, eleitoresRes, votos] = await Promise.all([
+      sbGet('partidos', '?ativo=eq.true&order=numero.asc'),
+      fetch(`${url}/rest/v1/eleitores?select=count`, { headers: { apikey: key, Authorization:`Bearer ${key}`, Prefer:'count=exact', 'Range-Unit':'items', Range:'0-0' } }),
+      sbGet('votos', '?select=partido_id')
+    ]);
+
+    const totalEleitores = eleitoresRes.headers.get('Content-Range')?.split('/')[1] || 0;
+    const totalVotos = votos.length;
+
+    // Count votes per partido
+    const voteCounts = {};
+    votos.forEach(v => { voteCounts[v.partido_id] = (voteCounts[v.partido_id] || 0) + 1; });
+
+    const results = partidos.map(p => ({ ...p, votos: voteCounts[p.id] || 0 }))
+      .sort((a,b) => b.votos - a.votos);
+
+    document.getElementById('totalVotos').textContent = totalVotos;
+    document.getElementById('totalEleitores').textContent = totalEleitores;
+    document.getElementById('participacao').textContent = totalEleitores > 0 ? Math.round(totalVotos/totalEleitores*100)+'%' : '0%';
+    document.getElementById('numPartidos').textContent = partidos.length;
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('pt-MZ');
+
+    // Render list
+    const list = document.getElementById('resultadosList');
+    list.innerHTML = results.map((p, i) => {
+      const pct = totalVotos > 0 ? (p.votos/totalVotos*100).toFixed(1) : 0;
+      const cor = CORES[i] || '#666';
+      return `
+        <div class="resultado-item ${i===0 && p.votos>0 ? 'vencedor' : ''}">
+          <div class="resultado-info">
+            <div class="resultado-num">${String(p.numero).padStart(2,'0')}</div>
+            <div>
+              <div class="resultado-nome" style="color:${cor}">${p.nome}</div>
+              <div class="resultado-candidato">${p.candidato}</div>
+            </div>
+            <div class="resultado-votos">
+              <div class="count" style="color:${cor}">${p.votos}</div>
+              <div class="pct">${pct}%</div>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${pct}%;background:${cor}"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Charts
+    const labels = results.map(p => p.nome);
+    const data = results.map(p => p.votos);
+    const colors = results.map((_, i) => CORES[i] || '#666');
+
+    if (pieChart) pieChart.destroy();
+    if (barChart) barChart.destroy();
+
+    const pieCtx = document.getElementById('chartPie').getContext('2d');
+    pieChart = new Chart(pieCtx, {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#0a0a0a', borderWidth: 3 }] },
+      options: {
+        plugins: { legend: { labels: { color:'rgba(255,255,255,0.6)', font:{family:'Oswald',size:11}, padding:15 } } },
+        animation: { duration: 1200 }
+      }
+    });
+
+    const barCtx = document.getElementById('chartBar').getContext('2d');
+    barChart = new Chart(barCtx, {
+      type: 'bar',
+      data: { labels, datasets: [{ label:'Votos', data, backgroundColor: colors.map(c=>c+'cc'), borderColor: colors, borderWidth: 2, borderRadius: 6 }] },
+      options: {
+        plugins: { legend: { display:false } },
+        scales: {
+          x: { ticks:{ color:'rgba(255,255,255,0.5)', font:{family:'Oswald'} }, grid:{ color:'rgba(255,255,255,0.05)' } },
+          y: { ticks:{ color:'rgba(255,255,255,0.5)', font:{family:'Oswald'} }, grid:{ color:'rgba(255,255,255,0.05)' }, beginAtZero:true }
+        },
+        animation: { duration: 1200 }
+      }
+    });
+
+  } catch(err) {
+    document.getElementById('resultadosList').innerHTML = `<div style="text-align:center;padding:30px;color:#ff6b6b;">⚠️ ${err.message}</div>`;
+  }
+}
+
+loadResultados();
+setInterval(loadResultados, 30000); // Auto-refresh every 30s
+</script>
+</body>
+</html>

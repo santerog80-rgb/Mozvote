@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Admin — MOZVOTE SUPREMO</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root { --verde:#009A44; --vermelho:#C8102E; --amarelo:#FFD700; --preto:#0a0a0a; --branco:#f5f5f5; --dourado:#B8860B; --sidebar-w:260px; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Source Sans 3',sans-serif; background:#060606; color:var(--branco); min-height:100vh; display:flex; }
+  
+  /* Login Screen */
+  .login-screen {
+    position:fixed; inset:0; background:var(--preto); z-index:9999;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .login-card {
+    background:rgba(255,255,255,0.05); border:2px solid var(--amarelo);
+    border-radius:16px; padding:50px 40px; width:100%; max-width:420px;
+    text-align:center;
+  }
+  .login-card h2 { font-family:'Oswald',sans-serif; font-size:1.8rem; letter-spacing:4px; color:var(--amarelo); margin-bottom:8px; }
+  .login-card p { color:rgba(255,255,255,0.4); font-size:0.9rem; margin-bottom:30px; }
+  
+  /* Sidebar */
+  .sidebar {
+    width:var(--sidebar-w); background:linear-gradient(180deg,#0d1a0d,#0a0a0a);
+    border-right:1px solid rgba(255,255,255,0.07);
+    display:flex; flex-direction:column;
+    position:fixed; top:0; left:0; bottom:0; z-index:100;
+    transition:transform 0.3s;
+  }
+  .sidebar-header {
+    padding:25px 20px;
+    border-bottom:1px solid rgba(255,255,255,0.07);
+    background:linear-gradient(135deg,#1a1a00,#0d1a0d);
+  }
+  .sidebar-logo { font-size:1.8rem; margin-bottom:8px; }
+  .sidebar-title { font-family:'Oswald',sans-serif; font-size:1rem; letter-spacing:2px; text-transform:uppercase; color:var(--amarelo); }
+  .sidebar-sub { font-size:0.75rem; color:rgba(255,255,255,0.3); letter-spacing:1px; }
+  .sidebar-nav { flex:1; padding:15px 0; overflow-y:auto; }
+  .nav-item {
+    display:flex; align-items:center; gap:12px;
+    padding:12px 20px; cursor:pointer;
+    font-size:0.9rem; letter-spacing:1px;
+    color:rgba(255,255,255,0.5);
+    transition:all 0.2s; border-left:3px solid transparent;
+    user-select:none;
+  }
+  .nav-item:hover { background:rgba(255,255,255,0.04); color:var(--branco); }
+  .nav-item.active { background:rgba(0,154,68,0.1); border-left-color:var(--verde); color:var(--branco); }
+  .nav-item .icon { font-size:1.1rem; min-width:20px; text-align:center; }
+  .sidebar-footer { padding:15px 20px; border-top:1px solid rgba(255,255,255,0.07); }
+  .logout-btn {
+    width:100%; padding:10px;
+    background:rgba(200,16,46,0.1); border:1px solid rgba(200,16,46,0.2);
+    border-radius:6px; color:rgba(200,16,46,0.8);
+    font-family:'Oswald',sans-serif; font-size:0.85rem; letter-spacing:2px; text-transform:uppercase;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .logout-btn:hover { background:rgba(200,16,46,0.2); }
+  
+  /* Main */
+  .main-content { margin-left:var(--sidebar-w); flex:1; padding:25px; overflow-y:auto; }
+  .page { display:none; }
+  .page.active { display:block; }
+  .page-header { margin-bottom:25px; }
+  .page-header h2 { font-family:'Oswald',sans-serif; font-size:1.8rem; letter-spacing:3px; text-transform:uppercase; }
+  .page-header p { color:rgba(255,255,255,0.4); font-size:0.9rem; margin-top:5px; }
+  
+  /* Cards */
+  .cards-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:15px; margin-bottom:25px; }
+  .card {
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+    border-radius:10px; padding:20px;
+  }
+  .card-icon { font-size:1.8rem; margin-bottom:10px; }
+  .card-num { font-family:'Oswald',sans-serif; font-size:2.2rem; font-weight:700; color:var(--amarelo); line-height:1; }
+  .card-label { font-size:0.8rem; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:2px; margin-top:5px; }
+  
+  /* Table */
+  .table-box { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; overflow:hidden; }
+  .table-header { padding:15px 20px; border-bottom:1px solid rgba(255,255,255,0.07); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+  .table-title { font-family:'Oswald',sans-serif; font-size:0.95rem; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.7); }
+  table { width:100%; border-collapse:collapse; font-size:0.9rem; }
+  th { padding:12px 16px; text-align:left; font-family:'Oswald',sans-serif; font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06); }
+  td { padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.04); color:rgba(255,255,255,0.75); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,0.02); }
+  .badge { padding:3px 10px; border-radius:20px; font-size:0.75rem; font-family:'Oswald',sans-serif; letter-spacing:1px; }
+  .badge.yes { background:rgba(0,154,68,0.2); color:#4cde8a; border:1px solid rgba(0,154,68,0.3); }
+  .badge.no { background:rgba(200,16,46,0.2); color:#ff6b6b; border:1px solid rgba(200,16,46,0.3); }
+  
+  /* Forms */
+  .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:15px; }
+  .form-group { margin-bottom:15px; }
+  label { display:block; font-size:0.8rem; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.4); margin-bottom:6px; }
+  input, select, textarea {
+    width:100%; padding:12px 16px;
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
+    border-radius:8px; color:var(--branco);
+    font-family:'Source Sans 3',sans-serif; font-size:0.95rem;
+    transition:all 0.2s; outline:none;
+  }
+  input:focus, select:focus, textarea:focus { border-color:var(--verde); background:rgba(0,154,68,0.08); }
+  select option { background:#111; }
+  .btn { padding:10px 20px; border:none; border-radius:6px; font-family:'Oswald',sans-serif; font-size:0.85rem; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.2s; }
+  .btn-green { background:linear-gradient(135deg,var(--verde),#005c29); color:white; }
+  .btn-green:hover { filter:brightness(1.1); }
+  .btn-red { background:linear-gradient(135deg,var(--vermelho),#8b0010); color:white; }
+  .btn-red:hover { filter:brightness(1.1); }
+  .btn-yellow { background:linear-gradient(135deg,var(--amarelo),var(--dourado)); color:var(--preto); }
+  .btn-yellow:hover { filter:brightness(1.1); }
+  .btn-gray { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.1); }
+  .btn-gray:hover { background:rgba(255,255,255,0.12); }
+  .btn-sm { padding:6px 14px; font-size:0.75rem; }
+  
+  /* Alert */
+  .alert { padding:12px 16px; border-radius:8px; font-size:0.9rem; margin-bottom:15px; }
+  .alert.success { background:rgba(0,154,68,0.2); border:1px solid rgba(0,154,68,0.4); color:#4cde8a; }
+  .alert.error { background:rgba(200,16,46,0.2); border:1px solid rgba(200,16,46,0.4); color:#ff6b6b; }
+  
+  /* Config section */
+  .config-section { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:25px; margin-bottom:20px; }
+  .config-section h3 { font-family:'Oswald',sans-serif; font-size:1rem; letter-spacing:2px; text-transform:uppercase; color:var(--amarelo); margin-bottom:20px; padding-bottom:10px; border-bottom:1px solid rgba(255,215,0,0.2); }
+  .toggle-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .toggle-row:last-child { border-bottom:none; }
+  .toggle-label span { display:block; font-size:0.8rem; color:rgba(255,255,255,0.4); }
+  .toggle { width:50px; height:26px; background:rgba(255,255,255,0.1); border-radius:13px; cursor:pointer; position:relative; transition:background 0.3s; }
+  .toggle.on { background:var(--verde); }
+  .toggle::after { content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; background:white; border-radius:50%; transition:left 0.3s; }
+  .toggle.on::after { left:27px; }
+  
+  @media(max-width:768px) {
+    .sidebar { transform:translateX(-100%); }
+    .sidebar.open { transform:translateX(0); }
+    .main-content { margin-left:0; }
+    .mobile-menu { display:block; }
+  }
+  @keyframes slideIn { from{transform:translateX(100px);opacity:0} to{transform:translateX(0);opacity:1} }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div style="font-size:3rem;margin-bottom:15px">⚙️</div>
+    <h2>PAINEL ADMIN</h2>
+    <p>Acesso restrito ao administrador do sistema</p>
+    <div class="alert error" id="loginErr" style="display:none"></div>
+    <div class="form-group"><label>Usuário</label><input type="text" id="adminUser" placeholder="admin" autocomplete="off"></div>
+    <div class="form-group"><label>Senha</label><input type="password" id="adminPass" placeholder="senha" autocomplete="current-password"></div>
+    <button class="btn btn-yellow" onclick="adminLogin()" style="width:100%;padding:14px;font-size:1rem;margin-top:5px">ENTRAR</button>
+    <div style="margin-top:20px"><a href="index.html" style="color:rgba(255,255,255,0.3);font-size:0.8rem;text-decoration:none">← Voltar ao início</a></div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">⚙️</div>
+    <div class="sidebar-title">Admin Panel</div>
+    <div class="sidebar-sub">MOZVOTE SUPREMO</div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span> Dashboard</div>
+    <div class="nav-item" onclick="showPage('partidos')"><span class="icon">🗳️</span> Partidos</div>
+    <div class="nav-item" onclick="showPage('eleitores')"><span class="icon">👥</span> Eleitores</div>
+    <div class="nav-item" onclick="showPage('resultados')"><span class="icon">📈</span> Resultados</div>
+    <div class="nav-item" onclick="showPage('configuracoes')"><span class="icon">🔧</span> Configurações</div>
+    <div class="nav-item" onclick="showPage('supabase')"><span class="icon">🔌</span> Supabase</div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="adminLogout()">⏏ SAIR</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main-content" id="mainContent">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-header">
+      <h2>📊 Dashboard</h2>
+      <p>Visão geral do sistema em tempo real</p>
+    </div>
+    <div class="cards-row">
+      <div class="card"><div class="card-icon">👥</div><div class="card-num" id="dash-eleitores">—</div><div class="card-label">Eleitores</div></div>
+      <div class="card"><div class="card-icon">🗳️</div><div class="card-num" id="dash-votos">—</div><div class="card-label">Votos</div></div>
+      <div class="card"><div class="card-icon">📋</div><div class="card-num" id="dash-partidos">—</div><div class="card-label">Partidos</div></div>
+      <div class="card"><div class="card-icon">📊</div><div class="card-num" id="dash-participacao">—</div><div class="card-label">Participação</div></div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:25px;margin-bottom:20px">
+      <h3 style="font-family:Oswald,sans-serif;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.5);font-size:0.9rem;margin-bottom:20px">GRÁFICO DE VOTOS</h3>
+      <canvas id="dashChart" height="200"></canvas>
+    </div>
+    <div class="table-box">
+      <div class="table-header"><div class="table-title">Últimas Eleições — Top Resultados</div><button class="btn btn-gray btn-sm" onclick="loadDashboard()">🔄 Actualizar</button></div>
+      <table><thead><tr><th>#</th><th>Partido</th><th>Candidato</th><th>Votos</th><th>%</th></tr></thead>
+      <tbody id="dashTable"><tr><td colspan="5" style="text-align:center;padding:20px;color:rgba(255,255,255,0.3)">A carregar...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PARTIDOS -->
+  <div class="page" id="page-partidos">
+    <div class="page-header">
+      <h2>🗳️ Gestão de Partidos</h2>
+      <p>Adicionar, editar ou remover partidos candidatos</p>
+    </div>
+    <div class="config-section">
+      <h3>➕ Adicionar Partido</h3>
+      <div id="partidoAlert"></div>
+      <div class="form-grid">
+        <div class="form-group"><label>Número do Partido</label><input type="number" id="p-numero" placeholder="Ex: 5" min="1"></div>
+        <div class="form-group"><label>Nome do Partido</label><input type="text" id="p-nome" placeholder="Ex: FRELIMO"></div>
+        <div class="form-group"><label>Nome do Candidato</label><input type="text" id="p-candidato" placeholder="Ex: Daniel Chapo"></div>
+        <div class="form-group"><label>URL Logo</label><input type="url" id="p-logo" placeholder="https://..."></div>
+        <div class="form-group"><label>Cor do Partido</label><input type="color" id="p-cor" value="#009A44" style="height:46px;padding:5px"></div>
+        <div class="form-group" style="align-self:flex-end"><button class="btn btn-green" onclick="adicionarPartido()" style="width:100%;padding:13px">ADICIONAR</button></div>
+      </div>
+    </div>
+    <div class="table-box">
+      <div class="table-header"><div class="table-title">Partidos Registados</div><button class="btn btn-gray btn-sm" onclick="loadPartidos()">🔄 Actualizar</button></div>
+      <table><thead><tr><th>Nº</th><th>Nome</th><th>Candidato</th><th>Status</th><th>Acções</th></tr></thead>
+      <tbody id="partidosTable"><tr><td colspan="5" style="text-align:center;padding:20px;color:rgba(255,255,255,0.3)">A carregar...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ELEITORES -->
+  <div class="page" id="page-eleitores">
+    <div class="page-header">
+      <h2>👥 Eleitores</h2>
+      <p>Lista de todos os eleitores registados</p>
+    </div>
+    <div class="table-box">
+      <div class="table-header">
+        <div class="table-title">Eleitores Registados</div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-gray btn-sm" onclick="loadEleitores()">🔄 Actualizar</button>
+          <button class="btn btn-yellow btn-sm" onclick="exportarEleitores()">📥 Exportar</button>
+        </div>
+      </div>
+      <table><thead><tr><th>Nome</th><th>BI</th><th>Votou?</th><th>Registado em</th></tr></thead>
+      <tbody id="eleitoresTable"><tr><td colspan="4" style="text-align:center;padding:20px;color:rgba(255,255,255,0.3)">A carregar...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div class="page" id="page-resultados">
+    <div class="page-header">
+      <h2>📈 Resultados Detalhados</h2>
+      <p>Análise completa dos votos</p>
+    </div>
+    <div class="cards-row" id="resulCards"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:20px">
+        <h3 style="font-family:Oswald,sans-serif;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:15px">PIE CHART</h3>
+        <canvas id="adminPie"></canvas>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:20px">
+        <h3 style="font-family:Oswald,sans-serif;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:15px">BAR CHART</h3>
+        <canvas id="adminBar"></canvas>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <button class="btn btn-yellow" onclick="exportarResultados()">📥 Exportar CSV</button>
+      <button class="btn btn-gray" onclick="loadAdminResultados()" style="margin-left:10px">🔄 Actualizar</button>
+    </div>
+  </div>
+
+  <!-- CONFIGURAÇÕES -->
+  <div class="page" id="page-configuracoes">
+    <div class="page-header">
+      <h2>🔧 Configurações</h2>
+      <p>Controle total do sistema eleitoral</p>
+    </div>
+    <div class="config-section">
+      <h3>⚡ Controlo da Eleição</h3>
+      <div id="configAlert"></div>
+      <div class="toggle-row">
+        <div class="toggle-label"><strong>Eleição Activa</strong><span>Permite ou bloqueia a votação</span></div>
+        <div class="toggle" id="toggleEleicao" onclick="toggleEleicao()"></div>
+      </div>
+      <div class="form-group" style="margin-top:20px"><label>Título da Eleição</label><input type="text" id="tituloEleicao" placeholder="Ex: Eleições Gerais 2025"></div>
+      <div class="form-group"><label>Descrição</label><textarea id="descEleicao" rows="3" placeholder="Descrição da eleição"></textarea></div>
+      <button class="btn btn-green" onclick="salvarConfig()" style="margin-top:5px">💾 SALVAR</button>
+    </div>
+    <div class="config-section" style="border-color:rgba(200,16,46,0.3)">
+      <h3 style="color:var(--vermelho)">⚠️ ZONA DE PERIGO</h3>
+      <div style="display:flex;gap:15px;flex-wrap:wrap">
+        <button class="btn btn-red" onclick="resetarVotos()">🗑️ RESETAR VOTOS</button>
+        <button class="btn btn-red" onclick="resetarEleitores()">🗑️ APAGAR ELEITORES</button>
+        <button class="btn btn-red" onclick="resetarTudo()">💥 RESET COMPLETO</button>
+      </div>
+      <p style="color:rgba(255,255,255,0.3);font-size:0.8rem;margin-top:10px">⚠️ Estas acções são irreversíveis!</p>
+    </div>
+  </div>
+
+  <!-- SUPABASE -->
+  <div class="page" id="page-supabase">
+    <div class="page-header">
+      <h2>🔌 Configuração Supabase</h2>
+      <p>Configure a ligação à base de dados</p>
+    </div>
+    <div class="config-section">
+      <h3>🔑 Credenciais Supabase</h3>
+      <div id="sbAlert"></div>
+      <div class="form-group">
+        <label>Supabase Project URL</label>
+        <input type="url" id="sbUrl" placeholder="https://xxxx.supabase.co">
+      </div>
+      <div class="form-group">
+        <label>Anon Public Key</label>
+        <input type="text" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+      </div>
+      <button class="btn btn-green" onclick="salvarSB()" style="margin-top:5px">💾 SALVAR E TESTAR</button>
+    </div>
+    <div class="config-section">
+      <h3>📋 SQL para Executar no Supabase</h3>
+      <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin-bottom:15px">Execute este SQL no painel do Supabase → SQL Editor para criar as tabelas:</p>
+      <textarea rows="20" style="font-family:monospace;font-size:0.8rem;background:#111;border-color:rgba(255,255,255,0.1)" readonly id="sqlCode"></textarea>
+      <button class="btn btn-gray" onclick="copiarSQL()" style="margin-top:10px">📋 COPIAR SQL</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/config.js"></script>
+<script>
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = '123456';
+let adminLogado = false;
+let adminPieChart, adminBarChart, dashChart;
+const CORES = ['#CC0000','#FFD700','#0055CC','#FF6600','#009A44','#9900CC','#00AAAA'];
+
+// Admin Login
+function adminLogin() {
+  const u = document.getElementById('adminUser').value;
+  const p = document.getElementById('adminPass').value;
+  const err = document.getElementById('loginErr');
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    adminLogado = true;
+    document.getElementById('loginScreen').style.display = 'none';
+    sessionStorage.setItem('admin_auth', '1');
+    loadAllData();
+  } else {
+    err.textContent = '⚠️ Credenciais incorretas. Tente: admin / 123456';
+    err.style.display = 'block';
+  }
+}
+function adminLogout() {
+  sessionStorage.removeItem('admin_auth');
+  window.location.reload();
+}
+
+// Check if already logged in
+if (sessionStorage.getItem('admin_auth') === '1') {
+  adminLogado = true;
+  document.getElementById('loginScreen').style.display = 'none';
+  loadAllData();
+}
+
+// Key enter on login
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !adminLogado) adminLogin();
+});
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'partidos') loadPartidos();
+  if (name === 'eleitores') loadEleitores();
+  if (name === 'resultados') loadAdminResultados();
+  if (name === 'configuracoes') loadConfig();
+  if (name === 'supabase') loadSBConfig();
+}
+
+function loadAllData() {
+  loadDashboard();
+  // Pre-load SB fields
+  const { url, key } = getSBConfig();
+  document.getElementById('sbUrl').value = url;
+  document.getElementById('sbKey').value = key;
+  loadSQLCode();
+}
+
+async function loadDashboard() {
+  const { url, key } = getSBConfig();
+  if (!url || !key) {
+    document.getElementById('dash-eleitores').textContent = '—';
+    document.getElementById('dash-votos').textContent = '—';
+    return;
+  }
+  try {
+    const [partidos, votos] = await Promise.all([
+      sbGet('partidos', '?ativo=eq.true'),
+      sbGet('votos', '?select=partido_id')
+    ]);
+    const eRes = await fetch(`${url}/rest/v1/eleitores?select=count`, { headers: { apikey:key, Authorization:`Bearer ${key}`, Prefer:'count=exact', 'Range-Unit':'items', Range:'0-0' } });
+    const totalEleitores = eRes.headers.get('Content-Range')?.split('/')[1] || 0;
+    const totalVotos = votos.length;
+    
+    document.getElementById('dash-eleitores').textContent = totalEleitores;
+    document.getElementById('dash-votos').textContent = totalVotos;
+    document.getElementById('dash-partidos').textContent = partidos.length;
+    document.getElementById('dash-participacao').textContent = totalEleitores > 0 ? Math.round(totalVotos/totalEleitores*100)+'%' : '0%';
+
+    const voteCounts = {};
+    votos.forEach(v => { voteCounts[v.partido_id] = (voteCounts[v.partido_id] || 0) + 1; });
+    const results = partidos.map(p => ({ ...p, votos: voteCounts[p.id]||0 })).sort((a,b)=>b.votos-a.votos);
+
+    const tbody = document.getElementById('dashTable');
+    tbody.innerHTML = results.map((p,i) => `
+      <tr><td>${String(p.numero).padStart(2,'0')}</td><td>${p.nome}</td><td>${p.candidato}</td>
+      <td style="color:var(--amarelo);font-family:Oswald,sans-serif">${p.votos}</td>
+      <td>${totalVotos>0?(p.votos/totalVotos*100).toFixed(1):0}%</td></tr>
+    `).join('');
+
+    if (dashChart) dashChart.destroy();
+    const ctx = document.getElementById('dashChart').getContext('2d');
+    dashChart = new Chart(ctx, {
+      type:'bar',
+      data:{ labels:results.map(p=>p.nome), datasets:[{ label:'Votos', data:results.map(p=>p.votos), backgroundColor:results.map((_,i)=>CORES[i]+'aa'), borderColor:results.map((_,i)=>CORES[i]), borderWidth:2, borderRadius:6 }] },
+      options:{ plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'rgba(255,255,255,0.5)'},grid:{color:'rgba(255,255,255,0.05)'}}, y:{ticks:{color:'rgba(255,255,255,0.5)'},grid:{color:'rgba(255,255,255,0.05)'},beginAtZero:true} }, animation:{duration:800} }
+    });
+  } catch(e) { console.error(e); }
+}
+
+async function loadPartidos() {
+  try {
+    const partidos = await sbGet('partidos', '?order=numero.asc');
+    const tbody = document.getElementById('partidosTable');
+    tbody.innerHTML = partidos.map(p => `
+      <tr>
+        <td>${String(p.numero).padStart(2,'0')}</td>
+        <td><strong style="font-family:Oswald,sans-serif">${p.nome}</strong></td>
+        <td>${p.candidato}</td>
+        <td><span class="badge ${p.ativo?'yes':'no'}">${p.ativo?'ACTIVO':'INACTIVO'}</span></td>
+        <td style="display:flex;gap:6px;padding-top:10px">
+          <button class="btn btn-${p.ativo?'red':'green'} btn-sm" onclick="togglePartido('${p.id}',${p.ativo})">${p.ativo?'Desactivar':'Activar'}</button>
+          <button class="btn btn-red btn-sm" onclick="removerPartido('${p.id}','${p.nome}')">🗑️</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="5" style="text-align:center;padding:20px;color:rgba(255,255,255,0.3)">Sem partidos</td></tr>';
+  } catch(e) { console.error(e); }
+}
+
+async function adicionarPartido() {
+  const num = parseInt(document.getElementById('p-numero').value);
+  const nome = document.getElementById('p-nome').value.trim();
+  const cand = document.getElementById('p-candidato').value.trim();
+  const logo = document.getElementById('p-logo').value.trim();
+  const cor = document.getElementById('p-cor').value;
+  const alertEl = document.getElementById('partidoAlert');
+
+  if (!num || !nome || !cand) {
+    alertEl.innerHTML = '<div class="alert error">⚠️ Preencha número, nome e candidato.</div>';
+    return;
+  }
+  try {
+    await sbPost('partidos', { numero:num, nome, candidato:cand, logo_url:logo||null, cor, ativo:true });
+    alertEl.innerHTML = '<div class="alert success">✅ Partido adicionado!</div>';
+    document.getElementById('p-numero').value = '';
+    document.getElementById('p-nome').value = '';
+    document.getElementById('p-candidato').value = '';
+    document.getElementById('p-logo').value = '';
+    loadPartidos();
+  } catch(e) {
+    alertEl.innerHTML = `<div class="alert error">⚠️ ${e.message}</div>`;
+  }
+}
+
+async function togglePartido(id, ativo) {
+  try { await sbPatch('partidos', `?id=eq.${id}`, { ativo: !ativo }); loadPartidos(); } catch(e) { alert(e.message); }
+}
+async function removerPartido(id, nome) {
+  if (!confirm(`Remover partido "${nome}"? Esta acção é irreversível.`)) return;
+  try { await sbDelete('partidos', `?id=eq.${id}`); loadPartidos(); } catch(e) { alert(e.message); }
+}
+
+async function loadEleitores() {
+  try {
+    const eleitores = await sbGet('eleitores', '?order=criado_em.desc&limit=100');
+    const tbody = document.getElementById('eleitoresTable');
+    tbody.innerHTML = eleitores.map(e => `
+      <tr>
+        <td>${e.nome}</td>
+        <td style="font-family:monospace">${e.bi}</td>
+        <td><span class="badge ${e.votou?'yes':'no'}">${e.votou?'SIM':'NÃO'}</span></td>
+        <td style="color:rgba(255,255,255,0.4)">${new Date(e.criado_em).toLocaleString('pt-MZ')}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px">Sem eleitores</td></tr>';
+  } catch(e) { console.error(e); }
+}
+
+function exportarEleitores() {
+  sbGet('eleitores','?order=nome.asc').then(data => {
+    const csv = 'Nome,BI,Votou,Registado_em\n' + data.map(e => `"${e.nome}","${e.bi}","${e.votou?'Sim':'Não'}","${e.criado_em}"`).join('\n');
+    downloadFile(csv, 'eleitores_mozvote.csv');
+  });
+}
+
+async function loadAdminResultados() {
+  try {
+    const [partidos, votos] = await Promise.all([
+      sbGet('partidos', '?ativo=eq.true&order=numero.asc'),
+      sbGet('votos', '?select=partido_id')
+    ]);
+    const voteCounts = {};
+    votos.forEach(v => { voteCounts[v.partido_id] = (voteCounts[v.partido_id] || 0) + 1; });
+    const results = partidos.map(p => ({ ...p, votos: voteCounts[p.id]||0 })).sort((a,b)=>b.votos-a.votos);
+    const totalVotos = votos.length;
+
+    document.getElementById('resulCards').innerHTML = results.map((p,i) => `
+      <div class="card" style="border-color:${CORES[i]}44">
+        <div class="card-num" style="color:${CORES[i]}">${p.votos}</div>
+        <div class="card-label">${p.nome}</div>
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-top:4px">${totalVotos>0?(p.votos/totalVotos*100).toFixed(1):0}%</div>
+      </div>
+    `).join('');
+
+    if (adminPieChart) adminPieChart.destroy();
+    if (adminBarChart) adminBarChart.destroy();
+    const colors = results.map((_,i)=>CORES[i]);
+    adminPieChart = new Chart(document.getElementById('adminPie').getContext('2d'), {
+      type:'pie', data:{ labels:results.map(p=>p.nome), datasets:[{data:results.map(p=>p.votos),backgroundColor:colors.map(c=>c+'cc'),borderColor:colors,borderWidth:2}] },
+      options:{plugins:{legend:{labels:{color:'rgba(255,255,255,0.6)',font:{family:'Oswald',size:10}}}}}
+    });
+    adminBarChart = new Chart(document.getElementById('adminBar').getContext('2d'), {
+      type:'bar', data:{ labels:results.map(p=>p.nome), datasets:[{label:'Votos',data:results.map(p=>p.votos),backgroundColor:colors.map(c=>c+'aa'),borderColor:colors,borderWidth:2,borderRadius:4}] },
+      options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'rgba(255,255,255,0.5)'},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'rgba(255,255,255,0.5)'},grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true}}}
+    });
+  } catch(e) { console.error(e); }
+}
+
+function exportarResultados() {
+  Promise.all([sbGet('partidos','?order=numero.asc'), sbGet('votos','?select=partido_id')]).then(([partidos, votos]) => {
+    const vc = {}; votos.forEach(v => { vc[v.partido_id] = (vc[v.partido_id]||0)+1; });
+    const total = votos.length;
+    const csv = 'Numero,Partido,Candidato,Votos,Percentagem\n' + partidos.map(p => `${p.numero},"${p.nome}","${p.candidato}",${vc[p.id]||0},"${total>0?((vc[p.id]||0)/total*100).toFixed(1):0}%"`).join('\n');
+    downloadFile(csv, 'resultados_mozvote.csv');
+  });
+}
+
+async function loadConfig() {
+  try {
+    const config = await sbGet('configuracoes', '?id=eq.1');
+    if (config[0]) {
+      const t = document.getElementById('toggleEleicao');
+      if (config[0].eleicao_ativa) t.classList.add('on'); else t.classList.remove('on');
+      document.getElementById('tituloEleicao').value = config[0].titulo_eleicao || '';
+      document.getElementById('descEleicao').value = config[0].descricao || '';
+    }
+  } catch(e) {}
+}
+
+async function toggleEleicao() {
+  const t = document.getElementById('toggleEleicao');
+  t.classList.toggle('on');
+  const ativo = t.classList.contains('on');
+  try {
+    await sbPatch('configuracoes', '?id=eq.1', { eleicao_ativa: ativo });
+    showToast(ativo ? '✅ Eleição activada!' : '⏸️ Eleição desactivada!', ativo ? 'success' : 'warning');
+  } catch(e) { showToast('⚠️ Erro: '+e.message, 'error'); }
+}
+
+async function salvarConfig() {
+  const titulo = document.getElementById('tituloEleicao').value;
+  const desc = document.getElementById('descEleicao').value;
+  try {
+    await sbPatch('configuracoes', '?id=eq.1', { titulo_eleicao: titulo, descricao: desc });
+    document.getElementById('configAlert').innerHTML = '<div class="alert success">✅ Configurações salvas!</div>';
+    setTimeout(() => document.getElementById('configAlert').innerHTML = '', 3000);
+  } catch(e) {
+    document.getElementById('configAlert').innerHTML = `<div class="alert error">⚠️ ${e.message}</div>`;
+  }
+}
+
+async function resetarVotos() {
+  if (!confirm('ATENÇÃO: Isto vai apagar TODOS os votos e permitir que os eleitores votem novamente. Confirmar?')) return;
+  try {
+    const { url, key } = getSBConfig();
+    await fetch(`${url}/rest/v1/votos`, { method:'DELETE', headers: {...sbHeaders(key)} });
+    await sbPatch('eleitores', '?votou=eq.true', { votou: false });
+    showToast('✅ Votos resetados!', 'success');
+  } catch(e) { showToast('⚠️ '+e.message, 'error'); }
+}
+
+async function resetarEleitores() {
+  if (!confirm('ATENÇÃO: Isto vai apagar TODOS os eleitores. Confirmar?')) return;
+  try {
+    const { url, key } = getSBConfig();
+    await fetch(`${url}/rest/v1/votos`, { method:'DELETE', headers: {...sbHeaders(key)} });
+    await fetch(`${url}/rest/v1/eleitores`, { method:'DELETE', headers: {...sbHeaders(key)} });
+    showToast('✅ Eleitores apagados!', 'success');
+  } catch(e) { showToast('⚠️ '+e.message, 'error'); }
+}
+
+async function resetarTudo() {
+  if (!confirm('RESET TOTAL: Apaga TODOS os votos e eleitores. Confirmar?')) return;
+  await resetarEleitores();
+}
+
+function loadSBConfig() {
+  const { url, key } = getSBConfig();
+  document.getElementById('sbUrl').value = url;
+  document.getElementById('sbKey').value = key;
+}
+
+function salvarSB() {
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  if (!url || !key) { document.getElementById('sbAlert').innerHTML='<div class="alert error">⚠️ Preencha URL e Key.</div>'; return; }
+  localStorage.setItem('sb_url', url);
+  localStorage.setItem('sb_key', key);
+  document.getElementById('sbAlert').innerHTML='<div class="alert success">✅ Credenciais salvas! A testar...</div>';
+  sbGet('partidos','?limit=1').then(() => {
+    document.getElementById('sbAlert').innerHTML='<div class="alert success">✅ Ligação OK! Supabase configurado.</div>';
+    loadDashboard();
+  }).catch(e => {
+    document.getElementById('sbAlert').innerHTML=`<div class="alert error">⚠️ Erro de ligação: ${e.message}</div>`;
+  });
+}
+
+function copiarSQL() {
+  navigator.clipboard.writeText(document.getElementById('sqlCode').value);
+  showToast('✅ SQL copiado!', 'success');
+}
+
+function loadSQLCode() {
+  document.getElementById('sqlCode').value = `-- MOZVOTE SUPREMO — Execute no Supabase SQL Editor
+CREATE TABLE IF NOT EXISTS eleitores (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  nome TEXT NOT NULL,
+  bi TEXT UNIQUE NOT NULL,
+  senha TEXT NOT NULL,
+  votou BOOLEAN DEFAULT FALSE,
+  criado_em TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS partidos (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  numero INTEGER UNIQUE NOT NULL,
+  nome TEXT NOT NULL,
+  candidato TEXT NOT NULL,
+  logo_url TEXT,
+  candidato_foto_url TEXT,
+  cor TEXT DEFAULT '#009A44',
+  ativo BOOLEAN DEFAULT TRUE,
+  criado_em TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS votos (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  eleitor_id UUID REFERENCES eleitores(id),
+  partido_id UUID REFERENCES partidos(id),
+  votado_em TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS configuracoes (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  eleicao_ativa BOOLEAN DEFAULT TRUE,
+  titulo_eleicao TEXT DEFAULT 'Eleições Gerais 2025',
+  descricao TEXT DEFAULT 'Escolha o seu partido'
+);
+
+INSERT INTO configuracoes (id, eleicao_ativa, titulo_eleicao)
+VALUES (1, true, 'Eleições Gerais 2025')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO partidos (numero, nome, candidato, cor) VALUES
+(1, 'FRELIMO', 'Daniel Chapo', '#CC0000'),
+(2, 'RENAMO', 'Ossufo Momade', '#FFD700'),
+(3, 'MDM', 'Lutero Simango', '#0000CC'),
+(4, 'PODEMOS', 'Venâncio Mondlane', '#FF6600')
+ON CONFLICT (numero) DO NOTHING;
+
+ALTER TABLE eleitores DISABLE ROW LEVEL SECURITY;
+ALTER TABLE partidos DISABLE ROW LEVEL SECURITY;
+ALTER TABLE votos DISABLE ROW LEVEL SECURITY;
+ALTER TABLE configuracoes DISABLE ROW LEVEL SECURITY;`;
+}
+
+function downloadFile(content, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type:'text/csv'}));
+  a.download = filename;
+  a.click();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirmar Voto — MOZVOTE SUPREMO</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Source+Sans+3:wght@400;600&family=Courier+Prime:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root { --verde:#009A44; --vermelho:#C8102E; --amarelo:#FFD700; --preto:#0a0a0a; --branco:#f5f5f5; --dourado:#B8860B; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Source Sans 3',sans-serif; background:#0d0d0d; color:var(--branco); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+  .flag-stripe { height:6px; position:fixed; top:0; left:0; right:0; background:linear-gradient(90deg,var(--verde) 33%,#111 33%,#111 34%,var(--amarelo) 34%,var(--amarelo) 66%,#111 66%,#111 67%,var(--vermelho) 67%); z-index:100; }
+  .container { width:100%; max-width:500px; margin-top:20px; }
+  .confirm-box {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border: 2px solid var(--amarelo);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(255,215,0,0.1);
+  }
+  .confirm-header {
+    background: linear-gradient(135deg, #1a1a00, #0a0a0a);
+    padding: 25px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,215,0,0.3);
+  }
+  .confirm-header h2 {
+    font-family:'Oswald',sans-serif;
+    font-size:1.5rem; letter-spacing:4px; text-transform:uppercase;
+    color:var(--amarelo);
+  }
+  .confirm-header p { color:rgba(255,255,255,0.5); font-size:0.9rem; margin-top:5px; }
+  .confirm-body { padding: 30px; }
+  .warning-box {
+    background: rgba(200,16,46,0.15);
+    border: 1px solid rgba(200,16,46,0.4);
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 0.9rem;
+    color: #ff9999;
+  }
+  .voto-display {
+    background: rgba(0,154,68,0.1);
+    border: 2px solid rgba(0,154,68,0.4);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 25px;
+    position: relative;
+    overflow: hidden;
+  }
+  .voto-display::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(0,154,68,0.1), transparent 70%);
+  }
+  .voto-num {
+    font-family:'Courier Prime',monospace;
+    font-size:5rem; font-weight:700;
+    color: var(--amarelo);
+    text-shadow: 0 0 30px rgba(255,215,0,0.4);
+    line-height:1;
+    margin-bottom:10px;
+    position:relative;
+  }
+  .voto-nome {
+    font-family:'Oswald',sans-serif;
+    font-size:2rem; letter-spacing:3px; font-weight:700;
+    color:var(--branco);
+    margin-bottom:5px;
+    position:relative;
+  }
+  .voto-candidato {
+    color:rgba(255,255,255,0.5);
+    font-size:0.95rem;
+    position:relative;
+  }
+  .eleitor-info {
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:8px;
+    padding:15px;
+    margin-bottom:25px;
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:10px;
+  }
+  .eleitor-info span { font-size:0.85rem; color:rgba(255,255,255,0.5); }
+  .eleitor-info strong { color:var(--branco); display:block; font-family:'Oswald',sans-serif; letter-spacing:1px; }
+  .btn-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
+  .btn-confirmar {
+    padding:18px;
+    background:linear-gradient(135deg, var(--verde), #005c29);
+    color:white; border:none; border-radius:8px;
+    font-family:'Oswald',sans-serif; font-size:1.1rem;
+    font-weight:700; letter-spacing:3px; text-transform:uppercase;
+    cursor:pointer; transition:all 0.3s;
+    box-shadow:0 4px 20px rgba(0,154,68,0.3);
+  }
+  .btn-confirmar:hover:not(:disabled) { filter:brightness(1.15); transform:translateY(-3px); box-shadow:0 8px 30px rgba(0,154,68,0.5); }
+  .btn-confirmar:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+  .btn-voltar {
+    padding:18px;
+    background:transparent;
+    color:var(--vermelho); border:2px solid rgba(200,16,46,0.4); border-radius:8px;
+    font-family:'Oswald',sans-serif; font-size:1rem;
+    letter-spacing:3px; text-transform:uppercase;
+    cursor:pointer; transition:all 0.3s;
+  }
+  .btn-voltar:hover { border-color:var(--vermelho); background:rgba(200,16,46,0.1); }
+  .loader { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:20px; }
+  .loader.active { display:flex; }
+  .loader-ring { width:60px;height:60px;border:4px solid rgba(255,255,255,0.1);border-top-color:var(--verde);border-radius:50%;animation:spin 1s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loader p { font-family:'Oswald',sans-serif; letter-spacing:2px; color:rgba(255,255,255,0.7); }
+  @keyframes slideIn { from{transform:translateX(100px);opacity:0} to{transform:translateX(0);opacity:1} }
+</style>
+</head>
+<body>
+<div class="flag-stripe"></div>
+<div class="loader" id="loader">
+  <div class="loader-ring"></div>
+  <p id="loaderMsg">A REGISTAR O SEU VOTO...</p>
+</div>
+
+<div class="container">
+  <div class="confirm-box">
+    <div class="confirm-header">
+      <h2>⚠️ CONFIRMAR VOTO</h2>
+      <p>Verifique a sua escolha antes de confirmar</p>
+    </div>
+    <div class="confirm-body">
+      <div class="warning-box">
+        🔒 <strong>ATENÇÃO:</strong> Após confirmar, o voto não pode ser alterado. O seu voto é secreto e definitivo.
+      </div>
+
+      <div class="voto-display">
+        <div class="voto-num" id="votoNum">—</div>
+        <div class="voto-nome" id="votoNome">—</div>
+        <div class="voto-candidato" id="votoCandidato">—</div>
+      </div>
+
+      <div class="eleitor-info">
+        <div>
+          <span>Eleitor</span>
+          <strong id="eleitorNome">—</strong>
+        </div>
+        <div>
+          <span>BI</span>
+          <strong id="eleitorBI">—</strong>
+        </div>
+        <div>
+          <span>Data e Hora</span>
+          <strong id="dataHora">—</strong>
+        </div>
+      </div>
+
+      <div class="btn-grid">
+        <button class="btn-voltar" onclick="window.location.href='votar.html'">← VOLTAR</button>
+        <button class="btn-confirmar" id="btnConfirmar" onclick="confirmarVoto()">CONFIRMAR ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script>
+const user = checkSession();
+const votoData = sessionStorage.getItem('voto_partido');
+if (!votoData) { window.location.href = 'votar.html'; }
+
+const voto = JSON.parse(votoData);
+const now = new Date();
+
+document.getElementById('votoNum').textContent = String(voto.numero).padStart(2,'0');
+document.getElementById('votoNome').textContent = voto.nome;
+document.getElementById('votoCandidato').textContent = 'Candidato: ' + voto.candidato;
+document.getElementById('eleitorNome').textContent = user.nome;
+document.getElementById('eleitorBI').textContent = user.bi;
+document.getElementById('dataHora').textContent = now.toLocaleString('pt-MZ');
+
+async function confirmarVoto() {
+  const btn = document.getElementById('btnConfirmar');
+  btn.disabled = true;
+  document.getElementById('loader').classList.add('active');
+
+  try {
+    // Double-check user hasn't voted
+    const eleitorCheck = await sbGet('eleitores', `?id=eq.${user.id}`);
+    if (eleitorCheck[0].votou) {
+      alert('⚠️ Já votou anteriormente!');
+      window.location.href = 'resultado.html';
+      return;
+    }
+
+    // Register vote
+    await sbPost('votos', { eleitor_id: user.id, partido_id: voto.id });
+    
+    // Mark as voted
+    await sbPatch('eleitores', `?id=eq.${user.id}`, { votou: true });
+
+    // Update session
+    user.votou = true;
+    localStorage.setItem('mozvote_user', JSON.stringify(user));
+    sessionStorage.removeItem('voto_partido');
+
+    // Play success sound
+    try {
+      const ctx = new AudioContext();
+      [523, 659, 784, 1047].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, ctx.currentTime + i*0.15);
+        gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + i*0.15 + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.15 + 0.3);
+        osc.start(ctx.currentTime + i*0.15);
+        osc.stop(ctx.currentTime + i*0.15 + 0.3);
+      });
+    } catch(e) {}
+
+    document.getElementById('loaderMsg').textContent = 'VOTO REGISTADO!';
+    setTimeout(() => window.location.href = 'sucesso.html', 1500);
+
+  } catch(err) {
+    document.getElementById('loader').classList.remove('active');
+    btn.disabled = false;
+    alert('⚠️ Erro ao registar voto: ' + (err.message || 'Tente novamente.'));
+  }
+}
+</script>
+</body>
+</html>

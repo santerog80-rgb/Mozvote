@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voto Registado — MOZVOTE SUPREMO</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --verde:#009A44; --vermelho:#C8102E; --amarelo:#FFD700; --preto:#0a0a0a; --branco:#f5f5f5; --dourado:#B8860B; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Source Sans 3',sans-serif; background:var(--preto); color:var(--branco); min-height:100vh; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .flag-stripe { height:6px; position:fixed; top:0; left:0; right:0; background:linear-gradient(90deg,var(--verde) 33%,#111 33%,#111 34%,var(--amarelo) 34%,var(--amarelo) 66%,#111 66%,#111 67%,var(--vermelho) 67%); z-index:100; }
+
+  /* Confetti */
+  .confetti-piece {
+    position: fixed;
+    width: 8px; height: 12px;
+    top: -20px;
+    animation: fall linear infinite;
+    opacity: 0.8;
+    border-radius: 2px;
+  }
+  @keyframes fall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  .container {
+    text-align: center;
+    padding: 40px 20px;
+    max-width: 500px;
+    width: 100%;
+    position: relative; z-index: 10;
+    animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+  @keyframes popIn { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+  
+  .check-circle {
+    width:120px; height:120px;
+    background:radial-gradient(circle, var(--verde), #005c29);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:4rem;
+    margin:0 auto 30px;
+    box-shadow:0 0 60px rgba(0,154,68,0.5), 0 0 120px rgba(0,154,68,0.2);
+    animation:pulse-check 2s ease-in-out infinite;
+  }
+  @keyframes pulse-check { 0%,100%{box-shadow:0 0 60px rgba(0,154,68,0.5)} 50%{box-shadow:0 0 80px rgba(0,154,68,0.8), 0 0 120px rgba(0,154,68,0.3)} }
+  
+  h1 {
+    font-family:'Oswald',sans-serif;
+    font-size:clamp(2rem,6vw,3.5rem);
+    font-weight:700; letter-spacing:4px; text-transform:uppercase;
+    background:linear-gradient(135deg,var(--amarelo),#fff,var(--amarelo));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    margin-bottom:10px;
+  }
+  h2 {
+    font-family:'Oswald',sans-serif;
+    font-size:1.2rem; letter-spacing:3px; text-transform:uppercase;
+    color:var(--verde); margin-bottom:25px;
+  }
+  .message {
+    font-size:1.1rem; color:rgba(255,255,255,0.6); line-height:1.8;
+    margin-bottom:30px;
+  }
+  .voter-card {
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:30px;
+    text-align:left;
+  }
+  .voter-card-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+    font-size:0.9rem;
+  }
+  .voter-card-row:last-child { border-bottom:none; }
+  .voter-card-row span { color:rgba(255,255,255,0.4); }
+  .voter-card-row strong { color:var(--branco); font-family:'Oswald',sans-serif; letter-spacing:1px; }
+  .btn-results {
+    display:inline-block;
+    padding:16px 40px;
+    background:linear-gradient(135deg,var(--amarelo),var(--dourado));
+    color:var(--preto); border:none; border-radius:8px;
+    font-family:'Oswald',sans-serif; font-size:1rem;
+    font-weight:700; letter-spacing:3px; text-transform:uppercase;
+    text-decoration:none; cursor:pointer; transition:all 0.3s;
+    box-shadow:0 4px 20px rgba(255,215,0,0.3);
+    margin:5px;
+  }
+  .btn-results:hover { filter:brightness(1.1); transform:translateY(-2px); }
+  .btn-home {
+    display:inline-block;
+    padding:16px 40px;
+    background:transparent;
+    color:rgba(255,255,255,0.5); border:2px solid rgba(255,255,255,0.15); border-radius:8px;
+    font-family:'Oswald',sans-serif; font-size:1rem;
+    letter-spacing:3px; text-transform:uppercase;
+    text-decoration:none; cursor:pointer; transition:all 0.3s;
+    margin:5px;
+  }
+  .btn-home:hover { border-color:rgba(255,255,255,0.3); color:rgba(255,255,255,0.8); }
+  .protocol-code {
+    font-family:'Courier Prime',monospace;
+    font-size:0.75rem;
+    color:rgba(255,255,255,0.2);
+    margin-top:25px;
+    letter-spacing:2px;
+  }
+</style>
+</head>
+<body>
+<div class="flag-stripe"></div>
+
+<div class="container">
+  <div class="check-circle">✅</div>
+  <h1>VOTO REGISTADO!</h1>
+  <h2>🇲🇿 OBRIGADO PELA SUA PARTICIPAÇÃO</h2>
+  <p class="message">
+    O seu voto foi registado com sucesso no sistema eletrónico MOZVOTE SUPREMO.<br>
+    A sua participação é fundamental para a democracia moçambicana.
+  </p>
+
+  <div class="voter-card">
+    <div class="voter-card-row">
+      <span>Eleitor</span>
+      <strong id="nomeDisplay">—</strong>
+    </div>
+    <div class="voter-card-row">
+      <span>Status</span>
+      <strong style="color:var(--verde)">✓ VOTO REGISTADO</strong>
+    </div>
+    <div class="voter-card-row">
+      <span>Data e Hora</span>
+      <strong id="dataDisplay">—</strong>
+    </div>
+    <div class="voter-card-row">
+      <span>Sistema</span>
+      <strong>MOZVOTE SUPREMO 2025</strong>
+    </div>
+  </div>
+
+  <div>
+    <a href="resultado.html" class="btn-results">📊 VER RESULTADOS</a>
+    <a href="index.html" onclick="logout(); return false;" class="btn-home">⬅ INÍCIO</a>
+  </div>
+  <div class="protocol-code" id="protocolCode">PROTOCOLO: MVS-<span id="proto">...</span></div>
+</div>
+
+<script src="js/config.js"></script>
+<script>
+  const user = checkSession();
+  if (user) {
+    document.getElementById('nomeDisplay').textContent = user.nome;
+  }
+  document.getElementById('dataDisplay').textContent = new Date().toLocaleString('pt-MZ');
+  document.getElementById('proto').textContent = Date.now().toString(36).toUpperCase();
+
+  // Create confetti
+  const colors = ['#009A44','#C8102E','#FFD700','#FFFFFF','#00CC55'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.animationDuration = (2 + Math.random() * 3) + 's';
+    el.style.animationDelay = (Math.random() * 3) + 's';
+    el.style.width = (6 + Math.random() * 6) + 'px';
+    el.style.height = (10 + Math.random() * 8) + 'px';
+    el.style.transform = `rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(el);
+  }
+
+  // Play victory sound
+  try {
+    const ctx = new AudioContext();
+    const melody = [523, 587, 659, 698, 784, 880, 988, 1047];
+    melody.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      const t = ctx.currentTime + i * 0.1;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.2, t + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      osc.start(t); osc.stop(t + 0.4);
+    });
+  } catch(e) {}
+</script>
+</body>
+</html>
